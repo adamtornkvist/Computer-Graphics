@@ -26,7 +26,7 @@ int mag = 1;
 int mini = 5;
 float anisotropy = 16.0f;
 float camera_pan = 0.f;
-bool showUI = false;
+bool showUI = true;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -43,7 +43,8 @@ GLuint shaderProgram;
 
 // The vertexArrayObject here will hold the pointers to
 // the vertex data (in positionBuffer) and color data per vertex (in colorBuffer)
-GLuint positionBuffer, colorBuffer, indexBuffer, vertexArrayObject;
+GLuint positionBuffer, colorBuffer, indexBuffer, vertexArrayObject, coordBuffer, texture;
+GLuint positionBuffer2, colorBuffer2, indexBuffer2, vertexArrayObject2, coordBuffer2, explosion;
 
 
 
@@ -91,6 +92,24 @@ void initialize()
 	//			Enable the vertex attrib array.
 	///////////////////////////////////////////////////////////////////////////
 
+	float texcoords[] = {
+	0.0f, 0.0f,    // (u,v) for v0
+	0.0f, 15.0f,   // (u,v) for v1
+	1.0f, 15.0f,   // (u,v) for v2
+	1.0f, 0.0f     // (u,v) for v3
+};
+
+	glGenBuffers(1, &coordBuffer);
+
+	glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+
+	glBufferData(GL_ARRAY_BUFFER, labhelper::array_length(texcoords) * sizeof(float), texcoords, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/);
+
+	glEnableVertexAttribArray(2);
+
+
 	///////////////////////////////////////////////////////////////////////////
 	// Create the element array buffer object
 	///////////////////////////////////////////////////////////////////////////
@@ -115,6 +134,105 @@ void initialize()
 	//			Load Texture
 	//************************************
 	// Task 2
+	int w, h, comp;
+	unsigned char* image = stbi_load("../scenes/textures/asphalt.jpg", &w, &h, &comp, STBI_rgb_alpha);
+
+	glGenTextures(1, &texture);
+
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	free(image);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	// Sets the type of filtering to be used on magnifying and
+	// minifying the active texture. These are the nicest available options.
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0f);
+
+	// All the explosion stuff. Kinda just copy pasted from above
+
+
+	// Create a handle for the vertex array object
+	glGenVertexArrays(1, &vertexArrayObject2);
+	// Set it as current, i.e., related calls will affect this object
+	glBindVertexArray(vertexArrayObject2);
+
+	///////////////////////////////////////////////////////////////////////////
+	// Create the positions buffer object
+	///////////////////////////////////////////////////////////////////////////
+	const float positions2[] = {
+		// X      Y       Z
+		10.0f, -10.0f, -50.0f,  // v0
+		10.0f, 10.0f, -50.0f, // v1
+		30.0f, 10.0f, -50.0f, // v2
+		30.0f, -10.0f, -50.0f   // v3
+	};
+	// Create a handle for the vertex position buffer
+	glGenBuffers(1, &positionBuffer2);
+	// Set the newly created buffer as the current one
+	glBindBuffer(GL_ARRAY_BUFFER, positionBuffer2);
+	// Send the vetex position data to the current buffer
+	glBufferData(GL_ARRAY_BUFFER, labhelper::array_length(positions2) * sizeof(float), positions2,
+		GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, false /*normalized*/, 0 /*stride*/, 0 /*offset*/);
+	// Enable the attribute
+	glEnableVertexAttribArray(0);
+
+	float texcoords2[] = {
+	0.0f, 0.0f,    // (u,v) for v0
+	0.0f, 1.0f,   // (u,v) for v1
+	1.0f, 1.0f,   // (u,v) for v2
+	1.0f, 0.0f     // (u,v) for v3
+	};
+
+	glGenBuffers(1, &coordBuffer2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, coordBuffer2);
+
+	glBufferData(GL_ARRAY_BUFFER, labhelper::array_length(texcoords2) * sizeof(float), texcoords2, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, false/*normalized*/, 0/*stride*/, 0/*offset*/);
+
+	glEnableVertexAttribArray(2);
+
+	///////////////////////////////////////////////////////////////////////////
+	// Create the element array buffer object
+	///////////////////////////////////////////////////////////////////////////
+	const int indices2[] = {
+		0, 1, 3, // Triangle 1
+		1, 2, 3  // Triangle 2
+	};
+	glGenBuffers(1, &indexBuffer2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, labhelper::array_length(indices2) * sizeof(float), indices2,
+		GL_STATIC_DRAW);
+
+	image = stbi_load("../scenes/textures/explosion.png", &w, &h, &comp, STBI_rgb_alpha);
+
+	glGenTextures(1, &explosion);
+
+	glBindTexture(GL_TEXTURE_2D, explosion);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+	free(image);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	
+	// Sets the type of filtering to be used on magnifying and
+	// minifying the active texture. These are the nicest available options.
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+
 }
 
 
@@ -137,7 +255,10 @@ void display(void)
 
 	// We disable backface culling for this tutorial, otherwise care must be taken with the winding order
 	// of the vertices. It is however a lot faster to enable culling when drawing large scenes.
-	glDisable(GL_CULL_FACE); //glEnable(GL_CULL_FACE);
+	glDisable(GL_CULL_FACE); 
+	//glEnable(GL_CULL_FACE);
+
+
 	// Disable depth testing
 	glDisable(GL_DEPTH_TEST);
 	// Set the shader program to use for this draw call
@@ -157,8 +278,24 @@ void display(void)
 	glUniform3f(loc, camera_pan, 10, 0);
 
 	// Task 3.1
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, mini);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, mag);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy);
 
 	glBindVertexArray(vertexArrayObject);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	// Explosion
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, explosion);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glBindVertexArray(vertexArrayObject2);
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 
@@ -174,18 +311,18 @@ void gui()
 	// ----------------- Set variables --------------------------
 	ImGui::PushID("mag");
 	ImGui::Text("Magnification");
-	ImGui::RadioButton("GL_NEAREST", &mag, 0);
-	ImGui::RadioButton("GL_LINEAR", &mag, 1);
+	ImGui::RadioButton("GL_NEAREST", &mag, GL_NEAREST);
+	ImGui::RadioButton("GL_LINEAR", &mag, GL_LINEAR);
 	ImGui::PopID();
 
 	ImGui::PushID("mini");
 	ImGui::Text("Minification");
-	ImGui::RadioButton("GL_NEAREST", &mini, 0);
-	ImGui::RadioButton("GL_LINEAR", &mini, 1);
-	ImGui::RadioButton("GL_NEAREST_MIPMAP_NEAREST", &mini, 2);
-	ImGui::RadioButton("GL_NEAREST_MIPMAP_LINEAR", &mini, 3);
-	ImGui::RadioButton("GL_LINEAR_MIPMAP_NEAREST", &mini, 4);
-	ImGui::RadioButton("GL_LINEAR_MIPMAP_LINEAR", &mini, 5);
+	ImGui::RadioButton("GL_NEAREST", &mini, GL_NEAREST);
+	ImGui::RadioButton("GL_LINEAR", &mini, GL_LINEAR);
+	ImGui::RadioButton("GL_NEAREST_MIPMAP_NEAREST", &mini, GL_NEAREST_MIPMAP_NEAREST);
+	ImGui::RadioButton("GL_NEAREST_MIPMAP_LINEAR", &mini, GL_NEAREST_MIPMAP_LINEAR);
+	ImGui::RadioButton("GL_LINEAR_MIPMAP_NEAREST", &mini, GL_LINEAR_MIPMAP_NEAREST);
+	ImGui::RadioButton("GL_LINEAR_MIPMAP_LINEAR", &mini, GL_LINEAR_MIPMAP_LINEAR);
 	ImGui::PopID();
 
 	ImGui::SliderFloat("Anisotropic filtering", &anisotropy, 1.0, 16.0, "Number of samples: %.0f");
